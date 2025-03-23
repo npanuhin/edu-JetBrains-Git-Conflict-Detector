@@ -44,14 +44,14 @@ For your convenience, here is a visual representation:
 
   </details>
 
-3. Run the script with the demo arguments. `get_diff.cmd` and `./get_diff.sh` are provided for your convenience.
+3. Run the script with the demo arguments. `get_diff.cmd` and `./get_diff.sh` are provided for your convenience. For example:
   ```bash
-  ./get_diff.sh
+  ./get_diff.sh origin/branchA branchB npanuhin edu-JetBrains-Git-Conflict-Detector {my_github_token}
   # or
-  python3 git_diff.py
+  python3 get_diff.py origin/branchA branchB npanuhin edu-JetBrains-Git-Conflict-Detector {my_github_token}
   ```
 
-4. If you want to reset Git structure to the initial state, you can either run `rollback.cmd`/`./rollback.sh` or clone the repository again
+4. If you want to reset Git structure to the initial state, you can either run `rollback.cmd` or `./rollback.sh` or clone the repository again
 
 <details>
 <summary>Personal remarks about the setup process</summary>

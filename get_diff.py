@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 import requests
 
@@ -43,13 +44,14 @@ def get_modified_files_remote(
 ) -> list[str] | None:
 
     headers = {'Authorization': f'token {access_token}'}
+    branch_name = branch_remote.split('/')[-1]
 
     response = requests.get(
-        f'https://api.github.com/repos/{owner}/{repo}/branches/{branch_remote.split("/")[1]}',
+        f'https://api.github.com/repos/{owner}/{repo}/branches/{branch_name}',
         headers=headers
     )
     if response.status_code != 200:
-        print(f'Failed to get branch info for rmeote branch {branch_remote}')
+        print(f'Failed to get branch info for remote branch {branch_remote}')
         print(response.text)
         return None
 
@@ -62,7 +64,7 @@ def get_modified_files_remote(
         headers=headers
     )
     if response.status_code != 200:
-        # print(f'Failed to get branch info for rmeote branch {branch_remote}')
+        print(f'Failed to get comparison info for commits {merge_base_commit}...{last_commit}')
         print(response.text)
         return None
 
@@ -72,39 +74,41 @@ def get_modified_files_remote(
     return [item['filename'] for item in data['files']]
 
 
-def main(
-    branch_a: str,
-    branch_b: str,
-    owner: str,
-    repo: str,
-    access_token: str,
-    local_repo_path: str = '.',
-):
-    merge_base_commit = get_merge_base(branch_a, branch_b, local_repo_path)
+def main():
+    parser = argparse.ArgumentParser(
+        description='Detect files modified in both local and remote branches independently.'
+    )
+
+    parser.add_argument('branch_a', help='Remote branch (e.g., origin/branchA)')
+    parser.add_argument('branch_b', help='Local branch (e.g., branchB)')
+    parser.add_argument('owner', help='GitHub repository owner')
+    parser.add_argument('repo', help='GitHub repository name')
+    parser.add_argument('access_token', help='GitHub personal access token')
+    parser.add_argument('--repo-path', default='.', help='Local repository path (default: current directory)')
+
+    args = parser.parse_args()
+
+    merge_base_commit = get_merge_base(args.branch_a, args.branch_b, args.repo_path)
     if merge_base_commit is None:
         return
     if LOG:
         print(f'Found merge base commit: {merge_base_commit}')
 
-    branch_a_modified_files = get_modified_files_remote(owner, repo, branch_a, merge_base_commit, access_token)
+    branch_a_modified_files = get_modified_files_remote(
+        args.owner, args.repo, args.branch_a, merge_base_commit, args.access_token
+    )
     if branch_a_modified_files is None:
         return
-    print(f'Files modified on "{branch_a}": {branch_a_modified_files}')
+    print(f'Files modified on "{args.branch_a}": {branch_a_modified_files}')
 
-    branch_b_modified_files = get_modified_files_local(branch_b, merge_base_commit, local_repo_path)
+    branch_b_modified_files = get_modified_files_local(args.branch_b, merge_base_commit, args.repo_path)
     if branch_b_modified_files is None:
         return
-    print(f'Files modified on "{branch_b}": {branch_b_modified_files}')
+    print(f'Files modified on "{args.branch_b}": {branch_b_modified_files}')
 
-    # conflicting_files = local_changes & remote_changes
-    # return conflicting_files
+    conflicting_files = set(branch_a_modified_files) & set(branch_b_modified_files)
+    print(f'Conflicting files: {conflicting_files}')
 
 
 if __name__ == '__main__':
-    branch_a = 'origin/branchA'
-    branch_b = 'branchB'
-    owner = 'npanuhin'
-    repo = 'edu-JetBrains-Git-Conflict-Detector'
-    access_token = ''
-
-    main(branch_a, branch_b, owner, repo, access_token)
+    main()
