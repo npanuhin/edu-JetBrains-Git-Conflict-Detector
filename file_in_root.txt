@@ -1,1 +1,1 @@
-Hello World!
+There is no «Exception» in this library

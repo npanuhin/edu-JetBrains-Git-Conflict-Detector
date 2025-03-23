@@ -1,1 +1,1 @@
-This file will be changed only on branch A
+This file is changed only on branch A

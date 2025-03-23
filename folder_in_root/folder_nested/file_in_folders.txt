@@ -1,1 +1,1 @@
-This file will be modified in both branches
+This file is modified in both branches
