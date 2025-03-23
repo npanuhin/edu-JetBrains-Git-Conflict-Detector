@@ -44,25 +44,26 @@ For your convenience, here is a visual representation:
 
   </details>
 
-3. Run the script with the demo arguments. `get_diff.cmd` and `get_diff.sh` are provided for your convenience.
+3. Run the script with the demo arguments. `get_diff.cmd` and `./get_diff.sh` are provided for your convenience.
   ```bash
   ./get_diff.sh
+  # or
   python3 git_diff.py
   ```
 
-4. If you want to reset Git structure to the initial state, you can either run `rollback.cmd`/`rollback.sh` or clone the repository again
+4. If you want to reset Git structure to the initial state, you can either run `rollback.cmd`/`./rollback.sh` or clone the repository again
 
 <details>
-<summary>Minor remarks</summary>
+<summary>Personal remarks about the setup process</summary>
 
 > Since different tools and pipelines might be used for tasks like cloning repositories and setting up Python environments (e.g., using virtualenv), I haven't provided a universal setup script. I hope this doesn't cause any inconvenience 😇
 >
-> However, here's an example script that I use to run the demo:
+> However, here's an example script you can use to setup the demo:
 > ```bash
 > git clone git@github.com:npanuhin/edu-JetBrains-Git-Conflict-Detector.git
 > cd edu-JetBrains-Git-Conflict-Detector
 > pip install -r -U requirements.txt
-> setup.cmd
+> setup
 > ```
 
 </details>
