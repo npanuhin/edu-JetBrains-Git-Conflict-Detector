@@ -2,6 +2,9 @@ import subprocess
 import requests
 
 
+LOG = False
+
+
 def run_cmd(cmd: list[str] | tuple[str, ...], error_message: str = '') -> str | None:
     try:
         return subprocess.run(cmd, capture_output=True, check=True, text=True).stdout
@@ -51,7 +54,8 @@ def get_modified_files_remote(
         return None
 
     last_commit = response.json()['commit']['sha']
-    print(f'Last commit on remote branch {branch_remote}: {last_commit}')
+    if LOG:
+        print(f'Last commit on remote branch {branch_remote}: {last_commit}')
 
     response = requests.get(
         f'https://api.github.com/repos/{owner}/{repo}/compare/{merge_base_commit}...{last_commit}',
@@ -79,17 +83,18 @@ def main(
     merge_base_commit = get_merge_base(branch_a, branch_b, local_repo_path)
     if merge_base_commit is None:
         return
-    print(f'Found merge base commit: {merge_base_commit}')
-
-    branch_b_modified_files = get_modified_files_local(branch_b, merge_base_commit, local_repo_path)
-    if branch_b_modified_files is None:
-        return
-    print(f'{branch_b} modified files: {branch_b_modified_files}')
+    if LOG:
+        print(f'Found merge base commit: {merge_base_commit}')
 
     branch_a_modified_files = get_modified_files_remote(owner, repo, branch_a, merge_base_commit, access_token)
     if branch_a_modified_files is None:
         return
-    print(f'{branch_a} modified files: {branch_a_modified_files}')
+    print(f'Files modified on "{branch_a}": {branch_a_modified_files}')
+
+    branch_b_modified_files = get_modified_files_local(branch_b, merge_base_commit, local_repo_path)
+    if branch_b_modified_files is None:
+        return
+    print(f'Files modified on "{branch_b}": {branch_b_modified_files}')
 
     # conflicting_files = local_changes & remote_changes
     # return conflicting_files
@@ -102,5 +107,4 @@ if __name__ == '__main__':
     repo = 'edu-JetBrains-Git-Conflict-Detector'
     access_token = ''
 
-    # print('Conflicting files:')
-    print(main(branch_a, branch_b, owner, repo, access_token))
+    main(branch_a, branch_b, owner, repo, access_token)
