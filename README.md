@@ -23,7 +23,7 @@ For your convenience, here is a visual representation:
 ### Setup
 
 1. Clone the repository to your local machine
-2. <a href="#dependencies"></a>Install Python dependencies:
+2. <a id="dependencies"></a>Install Python dependencies:
     ```bash
     pip install -r requirements.txt
     ```

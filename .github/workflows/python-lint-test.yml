@@ -1,4 +1,4 @@
-name: Python code linting
+name: Python Code Quality Check
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   lint:
-    name: Lint Python code
+    name: Lint & Test Python code
     runs-on: ubuntu-latest
 
     steps:
@@ -26,13 +26,20 @@ jobs:
         with:
           python-version: 3.13
           cache: pip
-          cache-dependency-path: .github/lint.requirements.txt
+          cache-dependency-path: |
+            .github/lint.requirements.txt
+            requirements.txt
 
       - name: Install dependencies
-        run: pip install -r ".github/lint.requirements.txt"
+        run: |
+          pip install -r ".github/lint.requirements.txt"
+          pip install -r "requirements.txt"
 
-      - name: Flake8
+      - name: Run Flake8
         run: flake8 --show-source --statistics
 
-      - name: mypy
+      - name: Run mypy
         run: mypy . --config-file tox.ini --install-types --non-interactive
+
+      - name: Run pytest
+        run: pytest
