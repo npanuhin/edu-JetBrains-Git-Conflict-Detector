@@ -6,7 +6,7 @@ import argparse
 import requests
 
 
-LOG = True
+LOG = False
 
 
 class FileStatus(Enum):
@@ -55,37 +55,44 @@ class FileChange:
     @classmethod
     def from_git(cls, raw_status: str, paths: list[str]) -> 'FileChange':
         status = FileStatus.from_git(raw_status)
+
         if status in (FileStatus.RENAMED, FileStatus.COPIED):
             if len(paths) != 2:
-                raise ValueError(f'Expected two paths for status {status}, got {paths}')
+                raise ValueError(f'Expected two paths for status "{status}", got "{paths}"')
             return cls(status=status, old_path=paths[0], path=paths[1])
+
         elif len(paths) != 1:
-            raise ValueError(f'Expected one path for status {status}, got {paths}')
+            raise ValueError(f'Expected one path for status "{status}", got "{paths}"')
+
         return cls(status=status, path=paths[0])
 
     @classmethod
     def from_github(cls, raw_status: str, filename: str, previous_filename: str | None = None) -> 'FileChange':
         status = FileStatus.from_github(raw_status)
-        if status in (FileStatus.RENAMED, FileStatus.COPIED):
-            if previous_filename is None:
-                raise ValueError(
-                    f'While handling file "{filename}"\n'
-                    f'Expected previous filename for status "{status.value}"'
-                )
-            return cls(status=status, old_path=previous_filename, path=filename)
-        return cls(status=status, path=filename)
+
+        if (previous_filename is not None) ^ (status in (FileStatus.RENAMED, FileStatus.COPIED)):
+            raise ValueError(
+                f'While handling file "{filename}"\n'
+                f'Expected {"" if previous_filename is None else "no"} previous filename for status "{status.value}"'
+            )
+
+        return cls(status=status, old_path=previous_filename, path=filename)
 
     def __str__(self) -> str:
         max_status_length = max(len(status.value) for status in FileStatus)
-
-        if self.status in (FileStatus.RENAMED, FileStatus.COPIED):
-            return f'{self.status.value.ljust(max_status_length)}  {self.old_path} -> {self.path}'
-        return f'{self.status.value.ljust(max_status_length)}  {self.path}'
+        return (
+            f'{self.status.value.ljust(max_status_length).capitalize()}  '
+            f'{self.old_path + " -> " if self.old_path else ""}'
+            f'{self.path}'
+        )
 
 
 def run_cmd(*cmd: str) -> str:
     try:
         return subprocess.run(cmd, capture_output=True, check=True, text=True).stdout.strip()
+
+    except FileNotFoundError as e:
+        raise RuntimeError(f'Command "{cmd[0]}" not found on local machine: {e}')
 
     except subprocess.CalledProcessError as e:
         raise RuntimeError(
@@ -99,14 +106,14 @@ def get_merge_base(branch_a: str, branch_b: str, repo_path: str) -> str:
     try:
         return run_cmd('git', '-C', repo_path, 'merge-base', branch_a, branch_b)
     except RuntimeError as e:
-        raise RuntimeError(f'Could not find merge base for {branch_a} and {branch_b}\n{e}')
+        raise RuntimeError(f'Could not find merge base for "{branch_a}" and "{branch_b}"\n{e}')
 
 
 def get_modified_files_local(branch_local: str, merge_base_commit: str, repo_path: str) -> list[FileChange]:
     try:
         cmd_output = run_cmd('git', '-C', repo_path, 'diff', '--name-status', merge_base_commit, branch_local)
     except RuntimeError as e:
-        raise RuntimeError(f'Failed to get `git diff` output for branch {branch_local}\n{e}')
+        raise RuntimeError(f'Failed to get `git diff` output for branch "{branch_local}"\n{e}')
 
     modified_files = []
 
@@ -116,7 +123,7 @@ def get_modified_files_local(branch_local: str, merge_base_commit: str, repo_pat
                 status, filename = line.split('\t', 1)
                 modified_files.append(FileChange.from_git(status, filename.split('\t')))
     except ValueError as e:
-        raise RuntimeError(f'Failed to parse `git diff` output for branch {branch_local}\n{e}')
+        raise RuntimeError(f'Failed to parse `git diff` output for branch "{branch_local}"\n{e}')
 
     return modified_files
 
@@ -132,7 +139,7 @@ def get_modified_files_remote(
         headers=headers
     )
     if response.status_code != 200:
-        raise RuntimeError(f'Failed to get branch info for remote branch {branch_remote}\n{response.text}')
+        raise RuntimeError(f'Failed to get branch info for remote branch "{branch_remote}"\n{response.text}')
 
     last_commit = response.json()['commit']['sha']
     if LOG:
@@ -144,7 +151,7 @@ def get_modified_files_remote(
     )
     if response.status_code != 200:
         raise RuntimeError(
-            f'Failed to get comparison info for commits {merge_base_commit}...{last_commit}\n{response.text}'
+            f'Failed to get comparison info for commits "{merge_base_commit}...{last_commit}"\n{response.text}'
         )
 
     response_data = response.json()
@@ -158,7 +165,7 @@ def get_modified_files_remote(
                 FileChange.from_github(item['status'], item['filename'], item.get('previous_filename'))
             )
     except ValueError as e:
-        raise RuntimeError(f'Failed to parse GitHub API response for remote branch {branch_remote}\n{e}')
+        raise RuntimeError(f'Failed to parse GitHub API response for remote branch "{branch_remote}"\n{e}')
 
     return modified_files
 
@@ -175,6 +182,10 @@ def main():
     parser.add_argument('--repo-path', default='.', help='Local repository path (default: current directory)')
     args = parser.parse_args()
 
+    if '/' in args.branch_b:
+        print('Local branch names should not contain "/" character')
+        return
+
     try:
         merge_base_commit = get_merge_base(args.branch_a, args.branch_b, args.repo_path)
     except RuntimeError as e:
@@ -188,13 +199,13 @@ def main():
             args.owner, args.repo, args.branch_a, merge_base_commit, args.access_token
         )
     except RuntimeError as e:
-        print(f'Failed to get modified files for remote branch {args.branch_a}\n{e}')
+        print(f'Failed to get modified files for remote branch "{args.branch_a}"\n{e}')
         return
 
     try:
         branch_b_modified_files = get_modified_files_local(args.branch_b, merge_base_commit, args.repo_path)
     except RuntimeError as e:
-        print(f'Failed to get modified files for local branch {args.branch_b}\n{e}')
+        print(f'Failed to get modified files for local branch "{args.branch_b}"\n{e}')
         return
 
     if LOG:

@@ -1,6 +1,8 @@
-# Python cache (+ mypy)
+# Python cache (+ mypy and pytest)
 __pycache__/
 .mypy_cache/
+.pytest_cache/
+latest_logs/
 
 # Python environment
 .venv/
