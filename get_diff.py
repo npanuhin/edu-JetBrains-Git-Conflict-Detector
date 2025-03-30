@@ -131,7 +131,7 @@ def get_modified_files_local(branch_local: str, merge_base_commit: str, repo_pat
 def get_modified_files_remote(
     owner: str, repo: str, branch_remote: str, merge_base_commit: str, access_token: str
 ) -> list[FileChange]:
-    headers = {'Authorization': f'token {access_token}'}
+    headers = {'Authorization': f'token {access_token}'} if access_token else {}
     branch_name = branch_remote.split('/')[-1]
 
     response = requests.get(
@@ -174,17 +174,26 @@ def main():
     parser = argparse.ArgumentParser(
         description='Detect files modified in both local and remote branches independently.'
     )
-    parser.add_argument('branch_a', help='Remote branch (e.g., origin/branchA)')
-    parser.add_argument('branch_b', help='Local branch (e.g., branchB)')
+    parser.add_argument('branch_b', help='Local branch, which will be checked for conflicts')
+    parser.add_argument('branch_a', help='Remote branch, which we compare against')
     parser.add_argument('owner', help='GitHub repository owner')
     parser.add_argument('repo', help='GitHub repository name')
-    parser.add_argument('access_token', help='GitHub personal access token')
-    parser.add_argument('--repo-path', default='.', help='Local repository path (default: current directory)')
+    parser.add_argument(
+        '--access_token', default='',
+        help='GitHub personal access token (only public repositories access by default)'
+    )
+    parser.add_argument(
+        '--repo_path', default='.',
+        help='Local repository path (default: current directory)'
+    )
     args = parser.parse_args()
 
     if '/' in args.branch_b:
         print('Local branch names should not contain "/" character')
         return
+
+    if '/' not in args.branch_a:
+        args.branch_a = f'origin/{args.branch_a}'
 
     try:
         merge_base_commit = get_merge_base(args.branch_a, args.branch_b, args.repo_path)
