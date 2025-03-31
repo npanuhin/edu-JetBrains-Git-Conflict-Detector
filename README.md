@@ -27,8 +27,9 @@ The repository includes demo branches that replicate the scenario described in t
 - A remote-only branch `branchA`, which is one commit ahead of the merge-base commit
 - A local-only branch `branchB`, which is also one commit ahead of the merge-base commit
 
+<a id="origin"></a>
 > [!NOTE]
-> The project does not rely on a local copy of `branchA`, meaning it can be out of sync with `origin/branchA` or even absent entirely. In this demo, `branchA` exists only remotely to emphasize this.
+> The project does not rely on a local copy of `branchA`, meaning it may be out of sync with `origin/branchA` or even absent entirely. In this demo, `branchA` exists only remotely to emphasize this. That's why I prefix it with `origin/` — ensuring that `git merge-base branchB origin/branchA` works correctly. Without this, `git merge-base branchB branchA` would fail if `branchA` is missing locally.
 
 For your convenience, here is a visual representation:
 
@@ -77,7 +78,7 @@ For your convenience, here is a visual representation:
 
     Parameters:
     - `branchB` — local branch, which will be checked for conflicts
-    - `[origin/]branchA` — remote branch, which we compare against. If `origin/` will be added automatically, is omitted[^1]
+    - `[origin/]branchA` — remote branch, which we compare against. `origin/` will be added automatically, if omitted[^1]
     - `repo_owner`, `repo_name` — GitHub repository owner and name
     - `--access_token` — GitHub API token. Not required for public repositories
     - `--repo_path {local path}` — path to the local repository. By default, the current directory is used
@@ -124,13 +125,13 @@ For your convenience, here is a visual representation:
 
 > Since different tools and workflows exist for managing Python environments and repositories (e.g., using virtualenv), I haven't included a universal installation script. I hope this doesn't cause any inconvenience 😇
 >
-> However, here’s a quick example for Windows:
+> However, here's a quick example for Windows:
 > ```bash
 > git clone git@github.com:npanuhin/edu-JetBrains-Git-Conflict-Detector.git
 > cd edu-JetBrains-Git-Conflict-Detector
 > pip install -r -U requirements.txt
 > setup
-> get_diff branchA branchB npanuhin edu-JetBrains-Git-Conflict-Detector {your_github_token}
+> get_diff branchB branchA npanuhin edu-JetBrains-Git-Conflict-Detector
 > ```
 
 </details>
@@ -150,4 +151,4 @@ python3 -m pytest
 
 ---
 
-[^1]: Is is possible to fetch the list of remotes using `git remote`, so if for example `branchA` is not on `origin`, we might detect that. This is one of the potential improvements for the project
+[^1]: The reson for adding `origin` is [mentioned here](#origin). Is is possible to fetch the list of remotes using `git remote`, so if for example `branchA` is not on `origin`, we might detect that. This is one of the potential improvements for the project
