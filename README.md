@@ -37,8 +37,12 @@ For your convenience, here is a visual representation:
 
 
 ### Prerequisites
+
 - Python 3 (tested with 3.13) and Git should be installed on your local machine
-- GitHub API access token [generated here](https://github.com/settings/personal-access-tokens) with `Read` access to `code` and `metadata` for the desired repository
+
+For accessing private repositories (not need for the demo):
+- GitHub API access token [generated here](https://github.com/settings/personal-access-tokens) with `Read` access to `Contents` for the desired repository
+
 
 ### Setup
 
@@ -73,15 +77,15 @@ For your convenience, here is a visual representation:
     # or
     python3 get_diff.py branchB branchA npanuhin edu-JetBrains-Git-Conflict-Detector
     # or (if this repository was private and located in a different directory)
-    python3 get_diff.py branchB branchA npanuhin edu-JetBrains-Git-Conflict-Detector {github_token} --repo_path ../some_path/
+    python3 get_diff.py branchB branchA npanuhin edu-JetBrains-Git-Conflict-Detector --access_token {github_token} --repo_path ../some_path/
     ```
 
     Parameters:
     - `branchB` — local branch, which will be checked for conflicts
     - `[origin/]branchA` — remote branch, which we compare against. `origin/` will be added automatically, if omitted[^1]
     - `repo_owner`, `repo_name` — GitHub repository owner and name
-    - `--access_token` — GitHub API token. Not required for public repositories
-    - `--repo_path {local path}` — path to the local repository. By default, the current directory is used
+    - `--access_token {github_token}` — GitHub API token. Not required for public repositories
+    - `--repo_path {local_path}` — path to the local repository. By default, the current directory is used
 
     <br>
     <details>
@@ -149,6 +153,5 @@ pytest
 python3 -m pytest
 ```
 
----
 
 [^1]: The reson for adding `origin` is [mentioned here](#origin). Is is possible to fetch the list of remotes using `git remote`, so if for example `branchA` is not on `origin`, we might detect that. This is one of the potential improvements for the project
